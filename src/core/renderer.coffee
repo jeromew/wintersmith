@@ -46,7 +46,15 @@ render = (env, outputDir, contents, templates, locals, callback) ->
       if error
         callback error
       else if result instanceof Stream or result instanceof Buffer
-        destination = path.join outputDir, content.filename
+        filename = content.filename
+        # inline the domain when baseUrl starts with http://, https:// or //
+        # in order to materialize the domains as directories in the 
+        # multi-domain use case
+        base = content.baseurl
+        if base.match /^(https?:)?\/\//
+          filename = base.replace(/^(https?:)?\/\//,'/') + filename
+
+        destination = path.join outputDir, filename
         env.logger.verbose "writing content #{ content.url } to #{ destination }"
         mkdirp.sync path.dirname destination
         writeStream = fs.createWriteStream destination

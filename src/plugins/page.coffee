@@ -81,13 +81,8 @@ module.exports = (env, callback) ->
         ':ext': ext
         ':basename': basename
         ':dirname': dirname
-
-      # eval code wrapped in double moustaches, use with care ;)
-      vm = ctx = null
-      filename = filename.replace /\{\{(.*?)\}\}/g, (match, code) =>
-        vm ?= require 'vm'
-        ctx ?= vm.createContext {env: env, page: this}
-        return vm.runInContext code, ctx
+      
+      filename = @_evalDoubleBrackets filename
 
       if filename[0] is '/'
         # filenames starting with a slash are absolute paths in the content tree
@@ -96,12 +91,24 @@ module.exports = (env, callback) ->
         # otherwise they are resolved from their directory in the tree
         return path.join dirname, filename
 
+    _evalDoubleBrackets: (template) ->
+      # eval code wrapped in double moustaches, use with care ;)
+      vm = ctx = null
+      template = template.replace /\{\{(.*?)\}\}/g, (match, code) =>
+        vm ?= require 'vm'
+        ctx ?= vm.createContext {env: env, page: this}
+        return vm.runInContext code, ctx
+
     getUrl: (base) ->
       # remove index.html for prettier links
       super(base).replace /([\/^])index\.html$/, '$1'
 
     getView: ->
       @metadata.view or 'template'
+    
+    getBaseUrl: ->
+      base = @metadata?.baseurl or env.config.baseUrl or '/'
+      base = @_evalDoubleBrackets base
 
     ### Page specific properties ###
 

@@ -41,15 +41,25 @@ class ContentPlugin
     ### Return filename for this content. This is where the result of the plugin's view will be written to. ###
     throw new Error 'Not implemented.'
 
+  @property 'baseurl', 'getBaseUrl'
+  getBaseUrl: ->
+    return @__env.config.baseUrl
+
   @property 'url', 'getUrl'
   getUrl: (base) ->
     ### Return url for this content relative to *base*. ###
     filename = @getFilename()
-    base ?= @__env.config.baseUrl
+    base = @getBaseUrl()
     if not base.match /\/$/
       base += '/'
     if process.platform is 'win32'
       filename = filename.replace /\\/g, '/' #'
+
+    # adapt base in preview mode for the
+    # multi-domain use case
+    if @__env.mode == 'preview'
+      base = base.replace /^(https?:)?\/\//, '/'
+    
     return url.resolve base, filename
 
   @property 'pluginColor', 'getPluginColor'
